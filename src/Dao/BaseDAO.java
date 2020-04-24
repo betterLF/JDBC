@@ -1,6 +1,5 @@
-package preparedstatement;
+package Dao;
 
-import bean.Customer;
 import util.JDBCUtils;
 
 import java.lang.reflect.Field;
@@ -13,18 +12,61 @@ import java.util.List;
 
 /**
  * @authtor liFei
- * @date 2020/4/20-11:18
+ * @date 2020/4/24-18:50
  */
-//使用PreparedStatement来实现针对不同表的通用的查询操作，返回表中的一条记录
-public class PreparedStatementQueryTest {
-    public <T> T getInstance(Class<T> clazz,String sql,Object...args){
-        //sql当中占位符的个数与可变形参的长度
-        //1:获取数据库的连接
-        Connection connection=null;
+/*
+封装了针对于数据表的通用操作
+ */
+public class BaseDAO {
+    //用于查询特殊值的操作
+    public <E>E getValue(Connection connection,String sql,Object...args){
         PreparedStatement preparedStatement=null;
         ResultSet resultSet=null;
         try {
-            connection = JDBCUtils.getConnection();
+            preparedStatement = connection.prepareStatement(sql);
+            for(int i=0;i<args.length;i++){
+                preparedStatement.setObject(i+1,args[i]);
+            }
+           resultSet = preparedStatement.executeQuery();
+            if(resultSet.next()){
+               return (E)resultSet.getObject(1);
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            //4：资源的关闭
+            JDBCUtils.closeResource(null, preparedStatement,resultSet);
+        }
+        return null;
+    }
+    //通用的增删改操作--version2.0(考虑上事务)
+    public static int update2(Connection connection, String sql, Object ...args){
+        //sql当中占位符的个数与可变形参的长度
+        PreparedStatement preparedStatement=null;
+        try {
+            //1：预编译sql语句，返回PreparedStatement的实例
+            preparedStatement = connection.prepareStatement(sql);
+            //2：填充占位符
+            for(int i=0;i<args.length;i++){
+                preparedStatement.setObject(i+1,args[i]);//小心参数声明错误
+            }
+            //3：执行
+            return preparedStatement.executeUpdate();
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            //4：资源的关闭
+            JDBCUtils.closeResource(null, preparedStatement);
+        }
+        return 0;
+    }
+    //使用PreparedStatement来实现针对不同表的通用的查询操作，返回表中的单条记录
+    public <T> T getInstance(Connection connection,Class<T> clazz,String sql,Object...args){
+        //sql当中占位符的个数与可变形参的长度
+        //1:获取数据库的连接
+        PreparedStatement preparedStatement=null;
+        ResultSet resultSet=null;
+        try {
             //2：预编译sql语句，返回PreparedStatement的实例
             preparedStatement = connection.prepareStatement(sql);
             //3:填充占位符
@@ -40,7 +82,7 @@ public class PreparedStatementQueryTest {
             //4:处理结果集
             //获取当前这条数据的各个字段值
             if(resultSet.next()){//判断结果集下一条是否有数据，如果有数据返回true，并指针下移，否则返回false
-                T t = clazz.newInstance();
+                T t = clazz.getDeclaredConstructor().newInstance();
                 //处理结果集一行数据中的每一个列
                 for (int i = 0; i <columnCount ; i++) {
                     //获取列值
@@ -58,19 +100,17 @@ public class PreparedStatementQueryTest {
             e.printStackTrace();
         }finally {
             //5：资源的关闭
-            JDBCUtils.closeResource(connection, preparedStatement,resultSet);
+            JDBCUtils.closeResource(null, preparedStatement,resultSet);
         }
         return null;
     }
     //使用PreparedStatement来实现针对不同表的通用的查询操作，返回表中的多条记录
-    public <T> List<T> getForList(Class<T> clazz, String sql, Object...args){
+    public <T> List<T> getForList(Connection connection,Class<T> clazz, String sql, Object...args){
         //sql当中占位符的个数与可变形参的长度
         //1:获取数据库的连接
-        Connection connection=null;
         PreparedStatement preparedStatement=null;
         ResultSet resultSet=null;
         try {
-            connection = JDBCUtils.getConnection();
             //2：预编译sql语句，返回PreparedStatement的实例
             preparedStatement = connection.prepareStatement(sql);
             //3:填充占位符
@@ -100,16 +140,15 @@ public class PreparedStatementQueryTest {
                     declaredField.setAccessible(true);
                     declaredField.set(t,columnValue);
                 }
-               ts.add(t);
+                ts.add(t);
             }
             return ts;
         }catch (Exception e){
             e.printStackTrace();
         }finally {
             //5：资源的关闭
-            JDBCUtils.closeResource(connection, preparedStatement,resultSet);
+            JDBCUtils.closeResource(null, preparedStatement,resultSet);
         }
         return null;
     }
-    }
-
+}
