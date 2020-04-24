@@ -17,7 +17,7 @@ import java.util.List;
 /*
 封装了针对于数据表的通用操作
  */
-public class BaseDAO {
+public abstract class BaseDAO {
     //用于查询特殊值的操作
     public <E>E getValue(Connection connection,String sql,Object...args){
         PreparedStatement preparedStatement=null;
