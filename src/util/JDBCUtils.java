@@ -1,6 +1,6 @@
 package util;
 
-import preparedstatement.PreparedStatementUpdateTest;
+import org.apache.commons.dbutils.DbUtils;
 
 import java.io.InputStream;
 import java.sql.*;
@@ -66,5 +66,18 @@ public class JDBCUtils {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+    public static void closeResource1(Connection connection,Statement ps,ResultSet resultSet ) {
+//        try {
+//            DbUtils.close(connection);
+//            DbUtils.close(ps);
+//            DbUtils.close(resultSet);
+//        }catch(Exception e){
+//            e.printStackTrace();
+//        }
+
+        DbUtils.closeQuietly(connection);
+        DbUtils.closeQuietly(ps);
+        DbUtils.closeQuietly(resultSet);
     }
 }

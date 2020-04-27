@@ -3,13 +3,16 @@ package connection2.util;
 import com.alibaba.druid.pool.DruidDataSourceFactory;
 import com.mchange.v2.c3p0.ComboPooledDataSource;
 import org.apache.commons.dbcp.BasicDataSourceFactory;
+import org.apache.commons.dbutils.DbUtils;
 
 import javax.sql.DataSource;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Properties;
 
 /**
@@ -68,5 +71,17 @@ public class JDBCUitls {
         Connection connection=dataSource.getConnection();
         return connection;
     }
+    public static void closeResource(Connection connection, Statement ps, ResultSet resultSet ) {
+//        try {
+//            DbUtils.close(connection);
+//            DbUtils.close(ps);
+//            DbUtils.close(resultSet);
+//        }catch(Exception e){
+//            e.printStackTrace();
+//        }
 
+        DbUtils.closeQuietly(connection);
+        DbUtils.closeQuietly(ps);
+        DbUtils.closeQuietly(resultSet);
+    }
 }
